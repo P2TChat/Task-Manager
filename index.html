@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1b1f38;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      width: 100%;
+    }
+    .task-creation {
+      width: 30%;
+      padding: 20px;
+      background-color: #283046;
+    }
+    .task-creation h2 {
+      margin-top: 0;
+      color: #00aaff;
+    }
+    .task-list {
+      width: 70%;
+      padding: 20px;
+      background-color: #1b1f38;
+      overflow-y: auto;
+    }
+    .task-list h2 {
+      margin-top: 0;
+      color: #00aaff;
+    }
+    .task {
+      display: flex;
+      flex-direction: column;
+      background-color: #00aaff;
+      color: black;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      position: relative;
+    }
+    .task small {
+      font-size: 0.8em;
+      color: #333333;
+      margin-top: 5px;
+    }
+    button, select {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+    }
+    button.clear {
+      margin-top: 20px;
+    }
+    input, textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    input[type="text"] {
+      background-color: #2e3b55;
+      color: white;
+    }
+    .task select {
+      margin-top: 10px;
+      background-color: #2e3b55;
+      color: white;
+    }
+    .status-new { background-color: #00aaff; }
+    .status-in-progress { background-color: #ffa500; }
+    .status-hold { background-color: #f44336; }
+    .status-completed { background-color: #4caf50; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="task-creation">
+      <h2>Create Task</h2>
+      <input type="text" id="taskInput" placeholder="Enter task">
+      <button onclick="addTask()">Add Task</button>
+      <input type="text" id="searchInput" placeholder="Search tasks" oninput="searchTasks()">
+      <button class="clear" onclick="clearTasks()">Clear All Tasks</button>
+    </div>
+    <div class="task-list">
+      <h2>Task List</h2>
+      <div id="taskContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    const taskContainer = document.getElementById('taskContainer');
+    const taskInput = document.getElementById('taskInput');
+    const searchInput = document.getElementById('searchInput');
+
+    // Load tasks from LocalStorage
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    // Render tasks
+    function renderTasks() {
+      taskContainer.innerHTML = '';
+      tasks.forEach((task, index) => {
+        const taskElement = document.createElement('div');
+        taskElement.className = `task status-${task.status.replace(' ', '-').toLowerCase()}`;
+        taskElement.innerHTML = `
+          <span>${task.text}</span>
+          <small>${task.createdAt}</small>
+          <select onchange="updateStatus(${index}, this)" ${task.status === 'Completed' ? 'disabled' : ''}>
+            <option value="New" ${task.status === 'New' ? 'selected' : ''} disabled>New</option>
+            <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option value="Hold" ${task.status === 'Hold' ? 'selected' : ''}>Hold</option>
+            <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+          </select>
+        `;
+        taskContainer.appendChild(taskElement);
+      });
+    }
+
+    // Add task
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (taskText === '') return;
+      const newTask = {
+        text: taskText,
+        createdAt: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
+        status: 'New',
+      };
+      tasks.unshift(newTask);
+      taskInput.value = '';
+      saveTasks();
+      renderTasks();
+    }
+
+    // Update task status
+    function updateStatus(index, selectElement) {
+      tasks[index].status = selectElement.value;
+      saveTasks();
+      renderTasks();
+    }
+
+    // Search tasks
+    function searchTasks() {
+      const query = searchInput.value.toLowerCase();
+      const filteredTasks = tasks.filter(task => task.text.toLowerCase().includes(query));
+      taskContainer.innerHTML = '';
+      filteredTasks.forEach((task, index) => {
+        const taskElement = document.createElement('div');
+        taskElement.className = `task status-${task.status.replace(' ', '-').toLowerCase()}`;
+        taskElement.innerHTML = `
+          <span>${task.text}</span>
+          <small>${task.createdAt}</small>
+          <select onchange="updateStatus(${index}, this)" ${task.status === 'Completed' ? 'disabled' : ''}>
+            <option value="New" ${task.status === 'New' ? 'selected' : ''} disabled>New</option>
+            <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option value="Hold" ${task.status === 'Hold' ? 'selected' : ''}>Hold</option>
+            <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+          </select>
+        `;
+        taskContainer.appendChild(taskElement);
+      });
+    }
+
+    // Clear all tasks
+    function clearTasks() {
+      tasks = [];
+      saveTasks();
+      renderTasks();
+    }
+
+    // Save tasks to LocalStorage
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // Initial render
+    renderTasks();
+  </script>
+</body>
+</html>
